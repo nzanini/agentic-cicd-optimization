@@ -34,9 +34,11 @@ Correctness is a hard constraint. The system must never skip a job that is requi
 
 **Name:** Catalog Ranker.
 
+**Kind:** a local **batch** workload. One run consumes committed fixtures, scores the whole catalog for every synthetic persona, evaluates those lists, and packages a content-addressed artifact. It is **not** a production ML training pipeline and **does not train a model**. The ranker weights are frozen in git.
+
 **Use case:** rank a small movie catalog for a handful of synthetic user personas. A judge should be able to open a JSON file and see “user U2 → top 5 titles.”
 
-**Why this workload:** it creates a short, understandable dependency graph (data → features → frozen model → scores → metrics → bundle → promote) without requiring training, GPUs, or paid APIs. The interesting problem is **which CI jobs that graph requires after a given change**, not model quality.
+**Why this workload:** it creates a short, understandable dependency graph (data → features → frozen model → scores → metrics → bundle → promote) without requiring training, GPUs, or paid APIs. The interesting problem is **which CI jobs that graph requires after a given change**, not model quality. Catalog Ranker is the thing being *scheduled*. B0 / B1 / B2 are different strategies for *which jobs to run*.
 
 **Workload components (local implementation in Phase 1.4):**
 
@@ -44,12 +46,12 @@ Correctness is a hard constraint. The system must never skip a job that is requi
 | --- | --- |
 | Vendored catalog snapshot | Input items (id, title, year, genres, …) |
 | Synthetic personas | Fixed preference vectors; not real users |
-| Frozen ranker artifact | Small committed weights file, treated as a pre-trained model |
+| Frozen ranker artifact | Small committed weights file. Not trained or updated in this repository |
 | Scoring | Deterministic ranking of the catalog per persona |
 | Evaluation | Metrics over those rankings (coverage, score summary, checksum) |
 | Bundle | Content-addressed package of predictions, metrics, manifests |
 
-**Concrete outputs (planned format):**
+**Concrete outputs (produced by the batch run):**
 
 | Output | Purpose |
 | --- | --- |
@@ -73,7 +75,7 @@ Scoring must be **deterministic** given the same catalog, personas, model, and c
 | `configs/pipeline.json` | Pipeline metadata; not read by the ranker (S08) |
 | `benchmark/scenarios.json` | S01–S14 ground truth |
 
-Local command: `python -m agentic_cicd rank --fixtures fixtures --output outputs/latest`. Generated files go under the output directory (gitignored). The S12 `configs/` weights location is not used yet.
+Local command: `python -m agentic_cicd rank --fixtures fixtures --output outputs/latest`. Generated files go under the output directory (gitignored). When present, `configs/scoring_weights.json` is merged into the frozen ranker (S12). That overlay changes scores; it is not training.
 
 **Rejected as the product:** training loops, hyperparameter search, large Hugging Face models, and any design whose main difficulty is model quality.
 
@@ -141,7 +143,7 @@ An artifact is identified by a **content hash** of the bundle payload (predictio
 
 ## 5. CI/CD job topology
 
-Jobs are a **proposed graph** for later implementation. Relative costs are **design weights** for a future simulator (dimensionless units). They are not measured times.
+Jobs are the executable graph implemented by B0 (and reused by B1/B2). Relative costs are **design weights** for the simulator (dimensionless units). They are not measured wall-clock times. These are CI/promotion stages around a batch ranker, **not** training stages.
 
 ### Graph (feature → development)
 
@@ -177,7 +179,19 @@ On a **clean** promote, only `branch_guard` and `promote` are required. `publish
 | `publish` | Record bundle as the development artifact | Bundle | Dev pointer / promotion record | `package` | 2 | New bundle on feature→dev | Feature→dev only |
 | `promote` | Point production at a **validated** artifact id; verify identity and ancestry | Dev artifact id, git ancestry, optional new bundle | Prod pointer + verification report | `branch_guard`, and `package` if rebuild | 2 | Every development→main PR | Development→main only |
 
-No extra jobs (Docker image build, cloud deploy, metadata-only generators) are in v1. Expensive work is represented by `score` (and, to a lesser degree, `ingest` / `prepare`). Those jobs may later use a simulated delay **equal to the cost weight**, not a real model train.
+No extra jobs (Docker image build, cloud deploy, metadata-only generators) are in v1. Expensive work is represented by `score` (and, to a lesser degree, `ingest` / `prepare`). Simulated cost is a **counter** equal to the cost weight, not a real model train.
+
+### Why a skipped producer can still be required as an input
+
+Downstream jobs consume upstream **artifacts**, not the fact that the producer ran in this request.
+
+- `prepare` needs the raw catalog / personas from `ingest`.
+- `score` needs `prepared_catalog.json` (and personas + the frozen model).
+- `evaluate` needs `predictions.json`.
+- `package` needs predictions, metrics, the dataset manifest, and the model object.
+- `publish` / rebuild `promote` need the packaged `artifact_id`.
+
+Skipping `ingest` or `prepare` is legal only if no required consumer needs that output, **or** a cached output with matching input identity is hydrated into the working directory. Re-doing the work inside another job and not counting the skipped job is not a legal skip. B0 never skips, so it always re-materializes every intermediate. B1 implements the cache/hydrate path. Formal rule: [OPTIMIZATION_CONTRACT.md](OPTIMIZATION_CONTRACT.md) §2.
 
 ---
 
@@ -198,15 +212,17 @@ Phase 1.6.1 corrected a B0 defect: dirty promote used to rebuild and then reject
 
 **Why B0:** it matches a naive “run the whole workflow on every PR” pipeline. It is executable later, produces the same artifact *types* as the optimized system, and is an honest comparison point. It is not claimed to be the smartest non-agent heuristic.
 
-**Stretch baseline (B1), not committed:** simple path filters. Stronger and closer to what some repos already do. Deferred so the first measured comparison is against B0. If B1 is added later, it uses the **same scenarios** and must be logged as a new iteration.
+**Stretch baseline (B1), historical Phase 1.3 note:** this paragraph originally deferred path filters. B1 is now implemented as an impact-graph optimizer (not path filters) and is the selected solution. See [`B1.md`](B1.md). It uses the **same** S01–S14 scenarios.
 
-**Phase 1.5 / 1.6.1:** B0 is implemented as a local runner (`python -m agentic_cicd b0`). See [`B0.md`](B0.md). It has been **measured** on S01–S14 (E-001, then corrected E-002). It has **not** been compared to an optimized system. Simulated costs are the Phase 1.3 weights (counter only, no sleep). `publish` / `promote` also depend on `test` so a failed test cannot write an environment pointer.
+**Phase 1.5 / 1.6.1:** B0 is implemented as a local runner (`python -m agentic_cicd b0`). See [`B0.md`](B0.md). It has been **measured** on S01–S14 (E-001, then corrected E-002). The B0 vs B1 comparison is **E-003**. Simulated costs are the Phase 1.3 weights (counter only, no sleep). `publish` / `promote` also depend on `test` so a failed test cannot write an environment pointer.
 
 ---
 
 ## 7. Change scenarios and ground truth
 
-Scenarios are the future benchmark. The same list is used for B0 and for any optimized system. Expected jobs are the **minimum required set** for correctness. Running extra jobs is not a correctness failure.
+Scenarios are the benchmark. The same list is used for B0, B1, and B2. Expected jobs are the **minimum required set** for correctness. Running extra jobs is not a correctness failure.
+
+**B0 vs B1 on this table:** B0 does **not** read the change class. On feature→development it always runs all nine legal jobs. On development→main it runs a full rebuild unless the caller explicitly passes `promote_mode=reuse` (S09). B1 classifies the change and may skip jobs whose outputs remain valid or can be hydrated from cache. High-level scenario map: [BENCHMARK.md](BENCHMARK.md).
 
 `PUB` = `publish`. `PROM` = `promote`. `BG` = `branch_guard`.
 
@@ -258,7 +274,7 @@ Quality-gate *thresholds* (evaluate failing the build because a metric dropped) 
 
 ## 9. Evaluation contract
 
-B0-only measurements exist (E-001, E-002 in [EXPERIMENT_LOG.md](EXPERIMENT_LOG.md)). No optimized comparison has been run.
+B0-only measurements exist (E-001, E-002 in [EXPERIMENT_LOG.md](EXPERIMENT_LOG.md)). The B0 vs B1 comparison is **E-003**.
 
 ### Protocol
 
@@ -385,7 +401,7 @@ Still open after Phase 1.3 (see also D-OPEN-* in [DECISION_LOG.md](DECISION_LOG.
 
 - Agent architecture, model, tools, and prompts (D-OPEN-07, D-OPEN-08). Phase 2.1 bounds the agent (it must not be the sole skip authority) but does not design it.
 - GitHub Actions vs local runner vs both (D-OPEN-12) — **closed for submission:** local runner only. GHA is not present and not required (D-052).
-- Whether to implement stretch baseline B1 (first deterministic algorithm is a Phase 2.2 question).
+- Whether to implement stretch baseline B1 — **closed:** B1 is the selected impact-graph optimizer (E-003).
 - Exact fixture paths, persona count, and hash algorithm — **closed in 1.4:** `fixtures/catalog.json` (16 titles), `fixtures/personas.json` (4 personas), `fixtures/model/ranker.json`; SHA-256 canonical JSON (D-018). S12 overlay path is implemented.
 - Whether `evaluate` may fail the workflow on metric thresholds.
 - How simulated cost is realized — **closed for B0:** counter only, no sleep.

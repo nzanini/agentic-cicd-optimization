@@ -127,6 +127,8 @@ These are the cacheable outputs a future optimizer may reuse when **input identi
 
 **Reuse rule:** skipping a producer is legal only if (a) no required downstream job needs that output, or (b) a cached output with a matching input identity is available. Re-doing the work inside another job and not counting the skipped job is not a legal skip.
 
+**Why this is not optional:** Catalog Ranker is a **batch pipeline**. Each stage reads the previous stage’s file. If `score` is required and `prepare` is skipped, `score` still needs `prepared_catalog.json` from a previous successful prepare whose inputs have not changed. B0 never takes this path (it always re-runs producers). B1 hydrates cache into the workload directory. Absence of a verified object is a cache miss, not a license to skip the consumer.
+
 ### Job cards (contract)
 
 #### `branch_guard`

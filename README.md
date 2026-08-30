@@ -17,7 +17,7 @@ B2 (a runtime LLM layer) was investigated and **rejected as the production optim
 
 **Objective:** minimize unnecessary pipeline work **while preserving correctness**. A required job must never be skipped. Uncertainty must **run**, not skip.
 
-Workload: a small deterministic **Catalog Ranker** (vendored movie catalog, synthetic personas, frozen weights). ML quality is not the research problem. The interesting question is which CI jobs that graph still needs after a change.
+**Workload being optimized:** Catalog Ranker — a local **batch** job that ranks a vendored movie catalog for synthetic personas and writes a content-addressed artifact. It is **not** a production ML training pipeline. The model is frozen; nothing is trained. The interesting question is which CI jobs that batch graph still needs after a change.
 
 Simulated promotion path (benchmark model only): `feature → development → main`. Direct `feature → main` is illegal. Those names are **CI flow labels inside the simulator**, not Git branches a judge must create.
 
@@ -25,11 +25,14 @@ Simulated promotion path (benchmark model only): `feature → development → ma
 
 ## What the system is
 
+Four different things. Do not collapse them.
+
 | Layer | Role | Status |
 | --- | --- | --- |
-| **B0** | Unoptimized baseline: run every job that is legal on the flow | Measured (E-002) |
-| **B1** | Deterministic optimizer: path → component → invalidated artifacts → required jobs, plus identity-checked cache | **Selected final solution** (E-003) |
-| **B2** | Optional agent proposes a tighter plan; a **deterministic verifier** is the only skip authority | Implemented, **rejected as the product optimizer** (E-010, E-011) |
+| **Catalog Ranker** | The batch workload being scheduled (fixtures → prepare → score → evaluate → package). No training. | Implemented (`python -m agentic_cicd rank`) |
+| **B0** | Unoptimized **execution**: run every job that is legal on the flow | Measured (E-002) |
+| **B1** | Deterministic **optimization**: path → component → invalidated artifacts → required jobs, plus identity-checked cache | **Selected final solution** (E-003) |
+| **B2** | Experimental **agentic optimizer**: optional agent proposes a tighter plan; a **deterministic verifier** is the only skip authority | Implemented, **rejected as the product optimizer** (E-010, E-011) |
 | **Cursor** | Coding / reasoning agent used to build the repo (this chat: Cursor Grok 4.6, Agent mode) | Development evidence |
 | **Ollama `qwen2.5:3b` / `qwen3:4b-instruct`** | Experimental **runtime** B2 models. Not Cursor. $0 local inference | No `T` win vs B1 |
 
@@ -37,9 +40,42 @@ Do not collapse Cursor and B2. Paying for Cursor does **not** drive the CI optim
 
 ---
 
-## How B0 works
+## Catalog Ranker (batch workload)
 
-B0 always executes the legal job graph. It does not inspect files to skip work.
+Catalog Ranker consumes committed fixtures and produces ranked lists. A judge can open JSON and see “user U2 → top 5 titles.”
+
+**Fixtures (in git):** `fixtures/catalog.json` (16 movies), `fixtures/personas.json` (4 synthetic personas), `fixtures/model/ranker.json` (frozen `weighted_genre_dot` weights). Optional overlay: `configs/scoring_weights.json` (changes scores; S12). `configs/pipeline.json` is pipeline metadata and is **not** read by the ranker (S08).
+
+**What one batch run does:**
+
+1. **Ingest** the catalog and persona fixtures and write a dataset manifest.
+2. **Prepare** deterministic feature vectors from the catalog.
+3. **Score / rank** every persona against the catalog with the **frozen** weights. No fit, no backprop, no GPU.
+4. **Evaluate** those predictions (coverage, score summary, checksum).
+5. **Package** a content-addressed artifact: `predictions.json`, `metrics.json`, `dataset_manifest.json`, `model_manifest.json`, plus the model object and scoring-code identity.
+
+The final output is ranked/predicted movie lists plus metrics, manifests, and artifact metadata — **not** a newly trained model. Standalone (no CI graph): `python -m agentic_cicd rank --fixtures fixtures --output outputs/latest`.
+
+Details: [`docs/PROBLEM_FRAMING.md`](docs/PROBLEM_FRAMING.md) §2.
+
+---
+
+## What each job does
+
+The CI graph wraps that batch workload with policy and promotion. Conceptual roles (not training stages):
+
+| Job | Conceptual role |
+| --- | --- |
+| `branch_guard` | Enforce allowed promotions. Always first. Illegal `feature → main` fails here and must not publish or promote. |
+| `validate` | Schema / fixture / config sanity. Does not rank or package. |
+| `test` | Trust application and test code before writing an environment pointer. |
+| `ingest` | Materialize raw catalog + personas from fixtures; write `dataset_manifest.json`. |
+| `prepare` | Build deterministic features (`prepared_catalog.json`) from the raw catalog. |
+| `score` | Rank the catalog per persona (**dominant cost**). Writes `predictions.json`. |
+| `evaluate` | Metrics and a predictions checksum (`metrics.json`). |
+| `package` | Content-addressed bundle + `artifact_id`. |
+| `publish` | Point **development** at the new bundle (feature→development only). |
+| `promote` | Point **production** at a validated artifact id (development→main only). |
 
 ```text
 branch_guard → validate → test
@@ -47,7 +83,9 @@ branch_guard → validate → test
                            ingest → prepare → score → evaluate → package → publish | promote
 ```
 
-On feature→development that is nine jobs (simulated cost **31**). Clean promote is an explicit `promote_mode=reuse` input, not change detection. Details: [`docs/B0.md`](docs/B0.md).
+## How B0 works
+
+B0 always executes the legal job graph. It does not inspect files to skip work. On feature→development that is nine jobs (simulated cost **31**). Clean promote is an explicit `promote_mode=reuse` input, not change detection. Details: [`docs/B0.md`](docs/B0.md).
 
 ---
 
@@ -62,7 +100,9 @@ changed paths → components → invalidated artifacts → required jobs
                  ↘ cache identity check
 ```
 
-Example: docs-only (S01) runs `branch_guard` (cost 1). Score-code (S03) reuses ingest/prepare from cache (cost 22). An unclassified path (S14) still costs 31.
+**Skipping a producer is not the same as needing no input.** Downstream jobs still consume upstream artifacts. If B1 skips `ingest` / `prepare` because those inputs did not change, it must **hydrate** the last-known-good `raw_catalog` / `prepared_catalog` so `score` can run. A skip is legal only when no required consumer needs that output, or a cached object with matching input identity is present. B0 never skips, so it never uses this path.
+
+Example: docs-only (S01) runs `branch_guard` (cost 1). Score-code (S03) reuses ingest/prepare from cache (cost 22). An unclassified path (S14) still costs 31. Scenario map: [`docs/BENCHMARK.md`](docs/BENCHMARK.md).
 
 Details: [`docs/B1.md`](docs/B1.md). Contract: [`docs/OPTIMIZATION_CONTRACT.md`](docs/OPTIMIZATION_CONTRACT.md).
 
@@ -206,10 +246,10 @@ Story: baseline (E-002) → deterministic optimization (E-003) → agent investi
 | --- | --- |
 | [docs/INSIGHTS.md](docs/INSIGHTS.md) | Lessons and hot take |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Hypothesis, current state, what changed |
-| [docs/PROBLEM_FRAMING.md](docs/PROBLEM_FRAMING.md) | Evaluation contract |
-| [docs/OPTIMIZATION_CONTRACT.md](docs/OPTIMIZATION_CONTRACT.md) | Optimizer-facing contract |
-| [docs/B0.md](docs/B0.md) / [B1.md](docs/B1.md) / [B2.md](docs/B2.md) | Implementations |
-| [docs/BENCHMARK.md](docs/BENCHMARK.md) | S01–S14 (+ S16–S18 pointer) |
+| [docs/PROBLEM_FRAMING.md](docs/PROBLEM_FRAMING.md) | Evaluation contract; Catalog Ranker batch workload |
+| [docs/OPTIMIZATION_CONTRACT.md](docs/OPTIMIZATION_CONTRACT.md) | Optimizer-facing contract; producer/consumer reuse |
+| [docs/B0.md](docs/B0.md) / [B1.md](docs/B1.md) / [B2.md](docs/B2.md) | Implementations (execution vs optimization vs experiment) |
+| [docs/BENCHMARK.md](docs/BENCHMARK.md) | S01–S14 change classes (+ S16–S18 pointer) |
 | [docs/AGENT_VALUE_BENCHMARK.md](docs/AGENT_VALUE_BENCHMARK.md) | Why B2 did not beat B1 |
 | [docs/AGENT_DESIGN.md](docs/AGENT_DESIGN.md) | B2 contract |
 | [docs/AGENT_PROVIDER_RESEARCH.md](docs/AGENT_PROVIDER_RESEARCH.md) | Cursor ≠ B2; $0 local path |
