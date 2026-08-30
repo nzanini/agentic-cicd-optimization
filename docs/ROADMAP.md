@@ -41,6 +41,8 @@ A second, related hypothesis is that promotion between symmetric environments (`
 
 ## Current project state
 
+**Judge path:** [README.md](../README.md) → [INSIGHTS.md](INSIGHTS.md) → this file and other docs only if needed.
+
 **As of:** 2026-08-30  
 **Phase:** 3.2 — Git-detector investigation; product frozen  
 **Status:** `completed` for this submission (awaiting review)

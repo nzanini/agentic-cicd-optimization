@@ -1,10 +1,12 @@
 # Insights and lessons
 
+**Judge path:** [README.md](../README.md) (start here) → this file → deeper docs only if needed.
+
 **Status:** final freeze (3.0–3.2)  
 **Date:** 2026-08-30  
 **Does not claim:** that a runtime LLM beat B1. Does not claim that B1 walks Git.
 
-This is the judge-facing hot take. Numbers come from [EXPERIMENT_LOG.md](EXPERIMENT_LOG.md). Development process: [CURSOR_DISCOVERIES.md](CURSOR_DISCOVERIES.md), [CURSOR_ENVIRONMENT.md](CURSOR_ENVIRONMENT.md).
+This is the second judge-facing document: lessons and the hot take. Headline numbers (**375 → 220**, 14/14, 0 false skips) live in the README and [EXPERIMENT_LOG.md](EXPERIMENT_LOG.md). Development process: [CURSOR_DISCOVERIES.md](CURSOR_DISCOVERIES.md), [CURSOR_ENVIRONMENT.md](CURSOR_ENVIRONMENT.md).
 
 ---
 
