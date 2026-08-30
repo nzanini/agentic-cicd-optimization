@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "suite": "agent_value",
+  "philosophy": "S16–S18 are agent-value rows. required_jobs is independent of B2. B1 is expected to over-run. S01–S14 stay in scenarios.json.",
+  "scenarios": [
+    {
+      "id": "S16",
+      "title": "Unknown script imports score",
+      "description": "An unclassified helper imports ranker.score. B1 cannot name that edge.",
+      "source": "feature",
+      "target": "development",
+      "files_changed": ["scripts/tune_weights.py"],
+      "expected_legal": true,
+      "expected_run_status": "succeeded",
+      "required_jobs": ["branch_guard", "validate", "test", "score", "evaluate", "package", "publish"],
+      "blocked_jobs": [],
+      "setup": "none",
+      "apply": [
+        {
+          "op": "write",
+          "path": "scripts/tune_weights.py",
+          "text": "import agentic_cicd.ranker.score\n"
+        }
+      ],
+      "artifact": {
+        "require_artifact_id_on_success": true,
+        "must_match_seed": false,
+        "must_differ_from_seed": false
+      },
+      "rationale": "Same impact class as S03 (score code). ingest/prepare are not required. Path is unknown to B1, so B1 runs the full graph. A verifier-accepted import edge can localize to score_code."
+    },
+    {
+      "id": "S17",
+      "title": "Hidden overlay path",
+      "description": "Unmapped ops/prod_weights.json extends scoring_weights.json and carries genre weights.",
+      "source": "feature",
+      "target": "development",
+      "files_changed": ["ops/prod_weights.json"],
+      "expected_legal": true,
+      "expected_run_status": "succeeded",
+      "required_jobs": ["branch_guard", "validate", "score", "evaluate", "package", "publish"],
+      "blocked_jobs": [],
+      "setup": "none",
+      "apply": [
+        {
+          "op": "write",
+          "path": "ops/prod_weights.json",
+          "text": "{\n  \"extends\": \"scoring_weights.json\",\n  \"genre_weights\": {\"action\": 2.0}\n}\n"
+        }
+      ],
+      "artifact": {
+        "require_artifact_id_on_success": true,
+        "must_match_seed": false,
+        "must_differ_from_seed": false
+      },
+      "rationale": "Same impact class as S12 (scoring overlay). The filename is not scoring_weights.json, so B1 classifies unknown and over-runs. The file contains the overlay needle and weight payload. ingest/prepare/test are not required."
+    },
+    {
+      "id": "S18",
+      "title": "Docs plus unknown score import",
+      "description": "Documentation plus the S16 helper. Unknown residue dominates B1.",
+      "source": "feature",
+      "target": "development",
+      "files_changed": ["README.md", "scripts/tune_weights.py"],
+      "expected_legal": true,
+      "expected_run_status": "succeeded",
+      "required_jobs": ["branch_guard", "validate", "test", "score", "evaluate", "package", "publish"],
+      "blocked_jobs": [],
+      "setup": "none",
+      "apply": [
+        {
+          "op": "write",
+          "path": "scripts/tune_weights.py",
+          "text": "import agentic_cicd.ranker.score\n"
+        }
+      ],
+      "artifact": {
+        "require_artifact_id_on_success": true,
+        "must_match_seed": false,
+        "must_differ_from_seed": false
+      },
+      "rationale": "Docs alone would be S01 (branch_guard). The unknown import has S03 impact. B1 unions conservatively to the full graph. Localizing only the script yields the S03 job set."
+    }
+  ]
+}

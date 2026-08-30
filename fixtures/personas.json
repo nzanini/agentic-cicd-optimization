@@ -1,0 +1,53 @@
+{
+  "version": "1",
+  "personas": [
+    {
+      "id": "U1",
+      "name": "action_fan",
+      "genre_prefs": {
+        "action": 1.0,
+        "thriller": 0.6,
+        "comedy": 0.1,
+        "drama": 0.2,
+        "romance": 0.0,
+        "scifi": 0.2
+      }
+    },
+    {
+      "id": "U2",
+      "name": "comedy_fan",
+      "genre_prefs": {
+        "action": 0.1,
+        "thriller": 0.2,
+        "comedy": 1.0,
+        "drama": 0.3,
+        "romance": 0.4,
+        "scifi": 0.1
+      }
+    },
+    {
+      "id": "U3",
+      "name": "scifi_fan",
+      "genre_prefs": {
+        "action": 0.3,
+        "thriller": 0.4,
+        "comedy": 0.1,
+        "drama": 0.2,
+        "romance": 0.1,
+        "scifi": 1.0
+      }
+    },
+    {
+      "id": "U4",
+      "name": "drama_romance",
+      "genre_prefs": {
+        "action": 0.0,
+        "thriller": 0.2,
+        "comedy": 0.2,
+        "drama": 0.9,
+        "romance": 0.8,
+        "scifi": 0.1
+      }
+    }
+  ]
+}

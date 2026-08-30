@@ -1,0 +1,5 @@
+{
+  "comment": "Optional overlay on fixtures/model/ranker.json. Changing this file changes scores (S12).",
+  "genre_weights": {},
+  "year_weight": null
+}

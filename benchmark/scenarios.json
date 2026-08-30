@@ -1,0 +1,286 @@
+{
+  "version": 1,
+  "philosophy": "required_jobs is the minimum set for correctness. Extra jobs are not a correctness failure. Ground truth is independent of B0 and of any future optimizer.",
+  "scenarios": [
+    {
+      "id": "S01",
+      "title": "Documentation-only",
+      "description": "Markdown/docs change that cannot affect artifacts.",
+      "source": "feature",
+      "target": "development",
+      "files_changed": ["README.md", "docs/ROADMAP.md"],
+      "expected_legal": true,
+      "expected_run_status": "succeeded",
+      "required_jobs": ["branch_guard"],
+      "blocked_jobs": [],
+      "setup": "none",
+      "apply": [{"op": "write", "path": "docs/NOTE.md", "text": "docs-only change\n"}],
+      "artifact": {
+        "require_artifact_id_on_success": false,
+        "must_match_seed": false,
+        "must_differ_from_seed": false
+      },
+      "rationale": "Documentation is not an input to ingest, score, or package."
+    },
+    {
+      "id": "S02",
+      "title": "Test-only",
+      "description": "Tests change; application, fixtures, and model do not.",
+      "source": "feature",
+      "target": "development",
+      "files_changed": ["tests/test_catalog_ranker.py"],
+      "expected_legal": true,
+      "expected_run_status": "succeeded",
+      "required_jobs": ["branch_guard", "test"],
+      "blocked_jobs": [],
+      "setup": "none",
+      "apply": [{"op": "write", "path": "tests/extra_note.py", "text": "# test-only change\n"}],
+      "artifact": {
+        "require_artifact_id_on_success": false,
+        "must_match_seed": false,
+        "must_differ_from_seed": false
+      },
+      "rationale": "Tests must run. No new bundle should be required."
+    },
+    {
+      "id": "S03",
+      "title": "Scoring / application code",
+      "description": "Scoring logic changes; catalog snapshot does not.",
+      "source": "feature",
+      "target": "development",
+      "files_changed": ["src/agentic_cicd/ranker/score.py"],
+      "expected_legal": true,
+      "expected_run_status": "succeeded",
+      "required_jobs": ["branch_guard", "validate", "test", "score", "evaluate", "package", "publish"],
+      "blocked_jobs": [],
+      "setup": "none",
+      "apply": [{"op": "set_year_weight", "value": 0.03}],
+      "artifact": {
+        "require_artifact_id_on_success": true,
+        "must_match_seed": false,
+        "must_differ_from_seed": false
+      },
+      "rationale": "Predictions change. Raw/prepared data can be reused. Apply uses a year_weight overlay so the suite does not patch installed package files."
+    },
+    {
+      "id": "S04",
+      "title": "Data snapshot",
+      "description": "Vendored catalog fixture changes.",
+      "source": "feature",
+      "target": "development",
+      "files_changed": ["fixtures/catalog.json"],
+      "expected_legal": true,
+      "expected_run_status": "succeeded",
+      "required_jobs": ["branch_guard", "validate", "ingest", "prepare", "score", "evaluate", "package", "publish"],
+      "blocked_jobs": [],
+      "setup": "none",
+      "apply": [{"op": "set_movie_title", "movie_id": "M01", "title": "Neon Harbor Redux"}],
+      "artifact": {
+        "require_artifact_id_on_success": true,
+        "must_match_seed": false,
+        "must_differ_from_seed": false
+      },
+      "rationale": "New raw data invalidates prepare, score, and the bundle. Code tests are not strictly required."
+    },
+    {
+      "id": "S05",
+      "title": "Preparation code",
+      "description": "Feature-preparation code changes; raw snapshot does not.",
+      "source": "feature",
+      "target": "development",
+      "files_changed": ["src/agentic_cicd/ranker/prepare.py"],
+      "expected_legal": true,
+      "expected_run_status": "succeeded",
+      "required_jobs": ["branch_guard", "validate", "test", "prepare", "score", "evaluate", "package", "publish"],
+      "blocked_jobs": [],
+      "setup": "none",
+      "apply": [{"op": "write", "path": "src/agentic_cicd/ranker/prepare.py", "text": "# simulated prepare.py edit marker\n"}],
+      "artifact": {
+        "require_artifact_id_on_success": true,
+        "must_match_seed": false,
+        "must_differ_from_seed": false
+      },
+      "rationale": "Prepared features change. Ingest output can be reused. The apply writes a workspace marker; B0 still executes the installed prepare module."
+    },
+    {
+      "id": "S06",
+      "title": "Model artifact",
+      "description": "Frozen ranker file changes.",
+      "source": "feature",
+      "target": "development",
+      "files_changed": ["fixtures/model/ranker.json"],
+      "expected_legal": true,
+      "expected_run_status": "succeeded",
+      "required_jobs": ["branch_guard", "validate", "score", "evaluate", "package", "publish"],
+      "blocked_jobs": [],
+      "setup": "none",
+      "apply": [{"op": "set_model_genre_weight", "genre": "comedy", "value": 1.5}],
+      "artifact": {
+        "require_artifact_id_on_success": true,
+        "must_match_seed": false,
+        "must_differ_from_seed": false
+      },
+      "rationale": "Scores depend on the model. Raw and prepared data can be reused."
+    },
+    {
+      "id": "S07",
+      "title": "Dependencies",
+      "description": "Project dependency metadata changes.",
+      "source": "feature",
+      "target": "development",
+      "files_changed": ["pyproject.toml"],
+      "expected_legal": true,
+      "expected_run_status": "succeeded",
+      "required_jobs": ["branch_guard", "validate", "test", "ingest", "prepare", "score", "evaluate", "package", "publish"],
+      "blocked_jobs": [],
+      "setup": "none",
+      "apply": [{"op": "write", "path": "pyproject.toml", "text": "[project]\nname = \"agentic-cicd-optimization\"\n"}],
+      "artifact": {
+        "require_artifact_id_on_success": true,
+        "must_match_seed": false,
+        "must_differ_from_seed": false
+      },
+      "rationale": "Runtime may affect every stage. Fail closed: require the full feature→dev graph."
+    },
+    {
+      "id": "S08",
+      "title": "Pipeline configuration",
+      "description": "Job-graph / pipeline metadata changes; score weights do not.",
+      "source": "feature",
+      "target": "development",
+      "files_changed": ["configs/pipeline.json"],
+      "expected_legal": true,
+      "expected_run_status": "succeeded",
+      "required_jobs": ["branch_guard", "validate"],
+      "blocked_jobs": [],
+      "setup": "none",
+      "apply": [{"op": "set_pipeline_description", "text": "pipeline comment only"}],
+      "artifact": {
+        "require_artifact_id_on_success": false,
+        "must_match_seed": false,
+        "must_differ_from_seed": false
+      },
+      "rationale": "pipeline.json is not read by the ranker. Contrast with S12."
+    },
+    {
+      "id": "S09",
+      "title": "Clean development → main",
+      "description": "Promote a validated development artifact with no invalidating change.",
+      "source": "development",
+      "target": "main",
+      "files_changed": [],
+      "expected_legal": true,
+      "expected_run_status": "succeeded",
+      "required_jobs": ["branch_guard", "promote"],
+      "blocked_jobs": [],
+      "setup": "publish_first",
+      "apply": [],
+      "artifact": {
+        "require_artifact_id_on_success": true,
+        "must_match_seed": true,
+        "must_differ_from_seed": false
+      },
+      "rationale": "Environment symmetry: production must receive the same artifact id."
+    },
+    {
+      "id": "S10",
+      "title": "Dirty development → main",
+      "description": "Promote after a scoring-behavior change that invalidates the prior artifact.",
+      "source": "development",
+      "target": "main",
+      "files_changed": ["src/agentic_cicd/ranker/score.py"],
+      "expected_legal": true,
+      "expected_run_status": "succeeded",
+      "required_jobs": ["branch_guard", "validate", "test", "score", "evaluate", "package", "promote"],
+      "blocked_jobs": [],
+      "setup": "publish_first",
+      "apply": [{"op": "set_year_weight", "value": 0.08}],
+      "artifact": {
+        "require_artifact_id_on_success": true,
+        "must_match_seed": false,
+        "must_differ_from_seed": true
+      },
+      "rationale": "Must not treat this as a clean promote. Score must run. Production should get the new artifact. Apply uses a weights overlay as a scoring-behavior proxy."
+    },
+    {
+      "id": "S11",
+      "title": "Illegal feature → main",
+      "description": "Direct promotion from feature to production.",
+      "source": "feature",
+      "target": "main",
+      "files_changed": ["src/agentic_cicd/ranker/score.py"],
+      "expected_legal": false,
+      "expected_run_status": "failed",
+      "required_jobs": ["branch_guard"],
+      "blocked_jobs": [],
+      "setup": "none",
+      "apply": [],
+      "artifact": {
+        "require_artifact_id_on_success": false,
+        "must_match_seed": false,
+        "must_differ_from_seed": false
+      },
+      "rationale": "branch_guard must fail. No publish or promote."
+    },
+    {
+      "id": "S12",
+      "title": "Adversarial configs/ weights",
+      "description": "Score weights live under configs/ and look like pipeline config.",
+      "source": "feature",
+      "target": "development",
+      "files_changed": ["configs/scoring_weights.json"],
+      "expected_legal": true,
+      "expected_run_status": "succeeded",
+      "required_jobs": ["branch_guard", "validate", "score", "evaluate", "package", "publish"],
+      "blocked_jobs": [],
+      "setup": "none",
+      "apply": [{"op": "set_overlay_genre_weight", "genre": "action", "value": 2.0}],
+      "artifact": {
+        "require_artifact_id_on_success": true,
+        "must_match_seed": false,
+        "must_differ_from_seed": false
+      },
+      "rationale": "A path filter that maps configs/** to S08 (validate only) would false-skip score."
+    },
+    {
+      "id": "S13",
+      "title": "Evaluate-only",
+      "description": "Evaluation / metric code changes; predictions inputs do not.",
+      "source": "feature",
+      "target": "development",
+      "files_changed": ["src/agentic_cicd/ranker/evaluate.py"],
+      "expected_legal": true,
+      "expected_run_status": "succeeded",
+      "required_jobs": ["branch_guard", "validate", "test", "evaluate", "package", "publish"],
+      "blocked_jobs": [],
+      "setup": "none",
+      "apply": [{"op": "write", "path": "src/agentic_cicd/ranker/evaluate.py", "text": "# simulated evaluate.py edit marker\n"}],
+      "artifact": {
+        "require_artifact_id_on_success": true,
+        "must_match_seed": false,
+        "must_differ_from_seed": false
+      },
+      "rationale": "Metrics and bundle payload change. Predictions can be reused."
+    },
+    {
+      "id": "S14",
+      "title": "Unknown / unclassified path",
+      "description": "A new path that is not in the known dependency graph.",
+      "source": "feature",
+      "target": "development",
+      "files_changed": ["unknown/orphan.dat"],
+      "expected_legal": true,
+      "expected_run_status": "succeeded",
+      "required_jobs": ["branch_guard", "validate", "test", "ingest", "prepare", "score", "evaluate", "package", "publish"],
+      "blocked_jobs": [],
+      "setup": "none",
+      "apply": [{"op": "write", "path": "unknown/orphan.dat", "text": "unclassified\n"}],
+      "artifact": {
+        "require_artifact_id_on_success": true,
+        "must_match_seed": false,
+        "must_differ_from_seed": false
+      },
+      "rationale": "D-016: if the system cannot show a job is unnecessary, it must run."
+    }
+  ]
+}

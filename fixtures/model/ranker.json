@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "algorithm": "weighted_genre_dot",
+  "top_n": 5,
+  "genre_weights": {
+    "action": 1.0,
+    "comedy": 1.0,
+    "drama": 1.0,
+    "romance": 1.0,
+    "scifi": 1.0,
+    "thriller": 1.0
+  },
+  "year_weight": 0.02,
+  "reference_year": 2016
+}

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "description": "Pipeline metadata only. The ranker does not read this file.",
+  "jobs": [
+    "branch_guard",
+    "validate",
+    "test",
+    "ingest",
+    "prepare",
+    "score",
+    "evaluate",
+    "package",
+    "publish",
+    "promote"
+  ]
+}
