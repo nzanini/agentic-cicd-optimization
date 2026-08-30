@@ -1,8 +1,8 @@
 # Insights and lessons
 
-**Status:** final consolidation (3.0–3.1)  
-**Date:** 2026-08-29  
-**Does not claim:** that a runtime LLM beat B1.
+**Status:** final freeze (3.0–3.2)  
+**Date:** 2026-08-30  
+**Does not claim:** that a runtime LLM beat B1. Does not claim that B1 walks Git.
 
 This is the judge-facing hot take. Numbers come from [EXPERIMENT_LOG.md](EXPERIMENT_LOG.md). Development process: [CURSOR_DISCOVERIES.md](CURSOR_DISCOVERIES.md), [CURSOR_ENVIRONMENT.md](CURSOR_ENVIRONMENT.md).
 
@@ -14,7 +14,7 @@ This is the judge-facing hot take. Numbers come from [EXPERIMENT_LOG.md](EXPERIM
 
 **Fail closed is a feature.** S07 (dependencies) and S14 (unknown path) require the full graph. Treating “we didn’t find an import” as a skip would have manufactured a cheaper, **wrong** system (CD-004, D-036).
 
-**Cursor as coding agent was useful.** The repo was designed, implemented, and audited in Agent mode (Cursor Grok 4.6). Discoveries such as “S14 cannot be the B2 win row” and “Cursor is not a B2 completions API” changed the architecture before they could contaminate the benchmark (CD-001, CD-005).
+**Cursor as coding agent was useful.** The repo was designed, implemented, and audited in Agent mode (Cursor Grok 4.6). Discoveries such as “S14 cannot be the B2 win row” and “Cursor is not a B2 completions API” changed the architecture before they could contaminate the benchmark (CD-001, CD-005). In Phase 3.2 the same agent was asked whether B1 should auto-discover Git changes: it proposed an adapter *outside* B1, showed that Git must not replace D-028, and recommended **not** implementing at freeze time (CD-014, D-053). That refusal is part of the evidence trail.
 
 **A ladder beats a jump.** B0 → B1 → B2 made it possible to say *what* improved. Jumping from B0 to an LLM would have hidden that the gain was rules, not the model (D-023).
 
@@ -49,3 +49,4 @@ A stronger **paid** model might raise the valid-edge rate on S16–S18. That is 
 - Treat “no search hits” as proof a file is inert.
 - Spend another phase retrying the same 3B/4B local tag for a `T` win (D-049, D-050).
 - Use Cursor Cloud Agents / `cursor-sdk` as B2’s runtime (wrong API, billed, not judge-reproducible).
+- Treat a missing Git detector as an optimizer bug and wire `git` into `b1/` or the S01–S14 harness at freeze time (D-053).

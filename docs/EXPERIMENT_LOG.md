@@ -6,7 +6,7 @@ This file records **actual experiments only**.
 - Do not copy hoped-for metrics into the “result” fields.
 - If an idea has not been run, it does not belong here as a completed experiment. Put it in the roadmap or decision log instead.
 
-**Experiments recorded:** E-001–E-013. Do not overwrite earlier entries. E-003 is the B0→B1 win. E-010/E-011 are B2 misses. E-012/E-013 are verification, not new optimizers.
+**Experiments recorded:** E-001–E-013. Do not overwrite earlier entries. E-003 is the B0→B1 win. E-010/E-011 are B2 misses. E-012/E-013 are verification, not new optimizers. Phase 3.2 (D-053) is documentation only: there is **no E-014**. Do not invent a suite re-run for the Git-detector freeze.
 
 ---
 

@@ -104,6 +104,8 @@ changed paths → components → invalidated artifacts → required jobs
 
 Example: docs-only (S01) runs `branch_guard` (cost 1). Score-code (S03) reuses ingest/prepare from cache (cost 22). An unclassified path (S14) still costs 31. Scenario map: [`docs/BENCHMARK.md`](docs/BENCHMARK.md).
 
+B1 does not inspect Git. The CLI takes `--changed`; the S01–S14 harness passes `files_changed ∪ apply` (D-028). Automatic working-tree detection was investigated and left out of this submission (D-053): it would not change the measured 375 → 220 result, and Git must not replace that harness signal.
+
 Details: [`docs/B1.md`](docs/B1.md). Contract: [`docs/OPTIMIZATION_CONTRACT.md`](docs/OPTIMIZATION_CONTRACT.md).
 
 ---
@@ -230,13 +232,13 @@ python -m agentic_cicd benchmark --system agentic --output outputs/benchmark-b2
 
 ## Agents, experiments, and the hot take
 
-**Cursor** (Cursor Grok 4.6, Agent mode) was used throughout to investigate the problem, implement B0/B1/B2, and keep an evidence trail. That usage is recorded in [`docs/CURSOR_ENVIRONMENT.md`](docs/CURSOR_ENVIRONMENT.md) and [`docs/CURSOR_DISCOVERIES.md`](docs/CURSOR_DISCOVERIES.md).
+**Cursor** (Cursor Grok 4.6, Agent mode) was used throughout to investigate the problem, implement B0/B1/B2, and keep an evidence trail — including recommending **not** to add a Git change detector at freeze time (D-053, CD-014). That usage is recorded in [`docs/CURSOR_ENVIRONMENT.md`](docs/CURSOR_ENVIRONMENT.md) and [`docs/CURSOR_DISCOVERIES.md`](docs/CURSOR_DISCOVERIES.md).
 
 **B2** asked a local model for a structured `b2_proposal` only on conservative B1 over-runs. The verifier never delegated skip authority to the model. Live `$0` models (`qwen2.5:3b`, then `qwen3:4b-instruct`) copied B1 or fell back. They did not discover hidden edges on S16–S18.
 
 **Hot take:** on this problem, a small checkable impact graph beat both a naive full pipeline and a local LLM wrapper. The valuable agent work was **engineering with Cursor**, not shipping a 3B/4B runtime optimizer. Full write-up: [`docs/INSIGHTS.md`](docs/INSIGHTS.md).
 
-Story: baseline (E-002) → deterministic optimization (E-003) → agent investigation → live agent experiments (E-006–E-011) → **select B1** (D-050).
+Story: baseline (E-002) → deterministic optimization (E-003) → agent investigation → live agent experiments (E-006–E-011) → **select B1** (D-050) → freeze without a Git adapter (D-053).
 
 ---
 
@@ -255,9 +257,9 @@ Story: baseline (E-002) → deterministic optimization (E-003) → agent investi
 | [docs/AGENT_PROVIDER_RESEARCH.md](docs/AGENT_PROVIDER_RESEARCH.md) | Cursor ≠ B2; $0 local path |
 | [docs/CURSOR_ENVIRONMENT.md](docs/CURSOR_ENVIRONMENT.md) | Coding-agent sessions |
 | [docs/CURSOR_DISCOVERIES.md](docs/CURSOR_DISCOVERIES.md) | Development discoveries |
-| [docs/IMPROVEMENT_CHANGELOG.md](docs/IMPROVEMENT_CHANGELOG.md) | Iterations I-001–I-019 |
+| [docs/IMPROVEMENT_CHANGELOG.md](docs/IMPROVEMENT_CHANGELOG.md) | Iterations I-001–I-020 |
 | [docs/EXPERIMENT_LOG.md](docs/EXPERIMENT_LOG.md) | Experiments E-001–E-013 |
-| [docs/DECISION_LOG.md](docs/DECISION_LOG.md) | Decisions, including D-050–D-052 |
+| [docs/DECISION_LOG.md](docs/DECISION_LOG.md) | Decisions, including D-050–D-053 |
 
 Generated runs go to `outputs/` (gitignored). Numbers above are copied from recorded experiments, not from hoped-for metrics.
 

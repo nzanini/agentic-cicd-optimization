@@ -172,3 +172,14 @@ Do not treat entries here as benchmark results.
 - **Evidence:** pre-3.1 README reproduce section; PROBLEM_FRAMING §4 diagram; `git status` (all untracked); `git log` (no HEAD); `git ls-remote origin` (empty)
 - **Changed the design?** no (documentation and topology only)
 - **Resulting decision:** D-052 — public repo is `main` only; judges clone and run locally
+
+### [CD-014] 2026-08-30 — Git detection is an adapter, not a B1 rule
+
+- **Discovery ID:** CD-014
+- **Date:** 2026-08-30
+- **Phase / iteration:** 3.2 / I-020
+- **What we initially believed:** B1’s lack of automatic Git change discovery was a product weakness to fix before submission. A judge should be able to clone, edit a file, run B1, and have the system infer `changed_paths` from Git.
+- **What Cursor discovered:** `changed_paths` already enters at the CLI (`--changed`), the harness (`change_set` = `files_changed ∪ apply`, D-028), and tests. B1 only classifies that list (`None` = unknown, `[]` = known-empty). Git belongs in an optional adapter *before* `plan_jobs`, never inside `b1/`. The suite **must not** use Git: S03/S10 declare `score.py` but apply a scoring-overlay proxy; S05/S13 use workspace markers; `materialize_workspace` copies only `fixtures/` and `configs/` and is not a Git repo. Replacing D-028 with a working-tree diff would change or fail-close the measured B1 result. Working tree vs `HEAD` is a demo UX and is **not** git-ancestry-for-promote. Cursor proposed `--from-git` as technically safe, then recommended **freezing** because it does not improve E-003 and adds late-stage surface.
+- **Evidence:** inspection of `cli.py`, `b1/planner.py`, `b1/classify.py`, `benchmark/apply.py`, `benchmark/runner.py`, `benchmark/scenarios.json` S03/S05/S10/S13; no new suite run
+- **Changed the design?** no (scope/documentation only; no adapter shipped)
+- **Resulting decision:** D-053 — do not implement Git detection in this submission; keep the caller-supplied change set as intentional

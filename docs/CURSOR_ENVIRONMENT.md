@@ -20,7 +20,23 @@ The participant should fill the **Human confirmation** table at the end of each 
 
 ---
 
-## Current session (Phase 3.1 — judge reproduction and topology)
+## Current session (Phase 3.2 — Git-detector investigation and freeze)
+
+| Field | Value | How known |
+| --- | --- | --- |
+| Date | 2026-08-30 | User/session clock (`user_info`) |
+| Phase | 3.2 — Git working-tree detector investigation; docs-only freeze | Human brief |
+| Purpose | Analyze whether B1 should auto-discover Git changes; document the decision **not** to implement | Human brief |
+| Coding product | **Cursor** | Session tools and docs |
+| Cursor mode | **Agent** | Session tool surface |
+| Fast / Slow / Max | **not programmatically verifiable** (not stated in this brief) | Not exposed |
+| Extra High | **not claimed** | Not stated |
+| Exact model name | **Cursor Grok 4.6** | Session identity |
+| Runtime B2 in this phase | none (docs only; no adapter code) | This brief |
+
+Cursor investigated the architecture, proposed an isolated `--from-git` adapter outside B1, found that Git must not replace D-028, and recommended freezing. That recommendation was accepted (D-053). This chat model was **not** used as B2. Judges do **not** need Cursor.
+
+## Prior session (Phase 3.1 — judge reproduction and topology)
 
 | Field | Value | How known |
 | --- | --- | --- |
@@ -32,9 +48,7 @@ The participant should fill the **Human confirmation** table at the end of each 
 | Fast / Slow / Max | **not programmatically verifiable** (not restated in this brief) | Not exposed |
 | Extra High | **not claimed** | Not stated |
 | Exact model name | **Cursor Grok 4.6** | Session identity |
-| Runtime B2 in this phase | none (docs/audit only) | This brief |
-
-Cursor (coding agent) and B2 (runtime optimizer) remain distinct. This chat model was **not** used as B2. Judges do **not** need Cursor.
+| Runtime B2 in this phase | none (docs/audit only) | That brief |
 
 ## Prior session (Phase 3.0 — final consolidation)
 
@@ -160,6 +174,7 @@ These rows summarize what earlier changelog entries already claimed. They are **
 | 2.10 | 2026-08-29 | this file | Cursor Grok 4.6 (session identity) | Agent |
 | 3.0 | 2026-08-29 | this file | Cursor Grok 4.6; Fast + High (human brief) | Agent |
 | 3.1 | 2026-08-29 | this file | Cursor Grok 4.6 (session identity) | Agent |
+| 3.2 | 2026-08-30 | this file | Cursor Grok 4.6 (session identity) | Agent |
 
 ---
 
@@ -175,10 +190,10 @@ These rows summarize what earlier changelog entries already claimed. They are **
 What is in the repository:
 
 - Phase session tables in this file (Cursor Grok 4.6, Agent mode).
-- Discoveries [CURSOR_DISCOVERIES.md](CURSOR_DISCOVERIES.md) (CD-001–CD-013).
-- Iterations [IMPROVEMENT_CHANGELOG.md](IMPROVEMENT_CHANGELOG.md) (I-001–I-019).
-- Experiments [EXPERIMENT_LOG.md](EXPERIMENT_LOG.md) (E-001–E-013) with commands and measured numbers.
-- Decisions [DECISION_LOG.md](DECISION_LOG.md), including D-050 (prefer B1) and D-051 (present B1).
+- Discoveries [CURSOR_DISCOVERIES.md](CURSOR_DISCOVERIES.md) (CD-001–CD-014).
+- Iterations [IMPROVEMENT_CHANGELOG.md](IMPROVEMENT_CHANGELOG.md) (I-001–I-020).
+- Experiments [EXPERIMENT_LOG.md](EXPERIMENT_LOG.md) (E-001–E-013) with commands and measured numbers. Phase 3.2 added no experiment.
+- Decisions [DECISION_LOG.md](DECISION_LOG.md), including D-050 (prefer B1), D-051 (present B1), and D-053 (no Git detector in this submission).
 
 What is **not** in the repository (do not invent it):
 
@@ -205,3 +220,4 @@ Copy from the Cursor UI. Leave blank if not checked.
 | 2.10 | 2026-08-29 | Cursor Grok 4.6 (session identity) | Agent | not stated in that brief | |
 | 3.0 | 2026-08-29 | Cursor Grok 4.6 | Agent | Fast + High (this brief) | Phase 3.0 brief |
 | 3.1 | 2026-08-29 | Cursor Grok 4.6 (session identity) | Agent | not restated in brief | |
+| 3.2 | 2026-08-30 | Cursor Grok 4.6 (session identity) | Agent | not stated in brief | |

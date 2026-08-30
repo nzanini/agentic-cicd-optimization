@@ -492,3 +492,27 @@ Copy the template below for every meaningful future iteration.
 - **Lessons learned:** Simulated promotion language is easy to misread as a required GitHub process. Zero-commit `main` is a separate publication blocker.
 - **Verification performed:** E-013 in `python:3.12-slim`: B0 **375**, B1 **220**, `cost_reduction_pct=0.413333`, 87 tests passed, ruff clean. No keys, no Ollama, no GHA.
 - **Still undecided:** first commit and push (participant action; not done here). Paid B2 remains out of scope.
+
+### [I-020] 2026-08-30 — Phase 3.2 freeze: Git detection analyzed, not implemented
+
+- **Iteration ID:** I-020
+- **Date:** 2026-08-30
+- **Objective:** Record the investigation of automatic Git working-tree change detection in front of B1. Do not implement it. Do not change B0, B1, B2, the verifier, the harness, or any scenario.
+- **Hypothesis:** Missing `git diff → changed_paths` is a usability/demo gap, not an optimizer defect. Cursor was asked whether it was worth fixing at freeze time. The safe architecture (adapter before B1) is clean, but implementing it would not improve E-003 and would add product surface and regression risk.
+- **Changes:** Documentation only. D-053, CD-014, B1/README/ROADMAP/INSIGHTS/OPTIMIZATION_CONTRACT wording. No `src/` edits. No `--from-git` flag. No suite re-run.
+- **Agent / model used:** Coding: Cursor Grok 4.6, Agent mode. Cursor investigated, proposed an isolated adapter, analyzed D-028 / S03–S13 risks, and recommended **not** implementing. No B2 live run.
+- **Agent mode / tooling:** Cursor Agent. Phase 3.2 conversation (analysis then docs-only follow-up).
+- **Prompt / instructions:** Human briefs: (1) inspect `changed_paths` entry points; assess Git-vs-HEAD vs harness; do not implement; (2) document the investigation and freeze decision only; run tests/lint; no commit; do not overwrite recorded experiments.
+- **Files changed:** `README.md`, `docs/{B1,DECISION_LOG,IMPROVEMENT_CHANGELOG,CURSOR_DISCOVERIES,CURSOR_ENVIRONMENT,INSIGHTS,ROADMAP,OPTIMIZATION_CONTRACT,EXPERIMENT_LOG}.md`
+- **Experiments performed:** none (docs-only; no E-014)
+- **Baseline result:** E-003 B0 375 / B1 220 unchanged
+- **New result:** not a cost experiment
+- **Metrics:** not re-claimed
+- **Failures:** none intended
+- **Retries:** none
+- **Human feedback:** document the freeze; do not implement the adapter
+- **Decision:** kept. D-053
+- **Rationale:** B1 optimizes a supplied change set. Git discovery is a future adapter, not a planner rule. The suite must keep D-028.
+- **Lessons learned:** Cursor recommending *not* to ship a late feature is part of the agentic trajectory. A documented limitation can be a scope decision.
+- **Verification performed:** Host `python` is the Windows Store stub. In `python:3.12-slim` (copy of the working tree; **no** benchmark): `python -m pytest` **87** passed; ruff check clean; ruff format: 66 files already formatted. No recorded experiment overwritten.
+- **Still undecided:** first commit and push (participant). Paid B2 remains out of scope. A later `--from-git` adapter is explicitly future-only.

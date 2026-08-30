@@ -41,9 +41,9 @@ A second, related hypothesis is that promotion between symmetric environments (`
 
 ## Current project state
 
-**As of:** 2026-08-29  
-**Phase:** 3.1 — Final judge reproduction and repository topology  
-**Status:** `in progress` (awaiting review)
+**As of:** 2026-08-30  
+**Phase:** 3.2 — Git-detector investigation; product frozen  
+**Status:** `completed` for this submission (awaiting review)
 
 | Area | State |
 | --- | --- |
@@ -57,11 +57,20 @@ A second, related hypothesis is that promotion between symmetric environments (`
 | Measured agent improvement vs B1 | **None.** E-010 and E-011: Q1 parity; Q2 no. |
 | Insights | [INSIGHTS.md](INSIGHTS.md) |
 
-What exists today: a complete B0→B1 measured win, an honest B2 miss, and clone-and-run documentation for a public `main` branch. No fabricated B2 win. A first commit + push is still required before GitHub clone works.
+What exists today: a complete B0→B1 measured win, an honest B2 miss, and clone-and-run documentation for a public `main` branch. No Git change detector. No fabricated B2 win. A first commit + push is still required before GitHub clone works.
 
 ## What changed from the original idea
 
 The product hypothesis is **retained**: change-aware job selection plus promotion/symmetry, local simulation, baseline-first, no fabricated results.
+
+**Phase 3.2** investigates automatic Git working-tree detection and **freezes without implementing it**:
+
+- **Date / iteration:** 2026-08-30 / I-020
+- **What changed:** Docs only. Cursor analyzed `changed_paths` entry points, proposed an adapter outside B1, showed Git must not replace D-028, and recommended not shipping it. D-053.
+- **Why:** A detector would not improve E-003. Putting Git in `b1/` or the harness is the wrong boundary. The caller-supplied change set is intentional scope.
+- **Evidence:** CD-014 (inspection). No new suite run. Headline numbers unchanged.
+- **Retained:** B1 as the product; D-028 harness union; omit-`--changed` = unknown
+- **Pointer:** D-053; future `--from-git` adapter is enhancement-only, not this submission
 
 **Phase 3.1** makes the public repository clone-and-run (no new optimizer):
 
@@ -263,9 +272,9 @@ E-003 is the B0 vs B1 win. E-004/E-006/E-010/E-011 are B2 measurements (no win v
 
 ### Phase 5 — Reproducibility and insights
 
-**Status:** `completed` for documentation (3.0–3.1)
+**Status:** `completed` for documentation (3.0–3.2)
 
-Judge README, expected metrics, insights, Cursor vs B2 distinction, and public-`main` clone path (no PR, no GHA, no required Ollama/Cursor/keys).
+Judge README, expected metrics, insights, Cursor vs B2 distinction, public-`main` clone path (no PR, no GHA, no required Ollama/Cursor/keys), and the D-053 freeze (no Git detector in the submitted product).
 
 ## Rejected / removed approaches
 
@@ -277,6 +286,8 @@ Judge README, expected metrics, insights, Cursor vs B2 distinction, and public-`
 | Live public API as benchmark data | D-011 | Reproducibility |
 | Skip-count as primary metric | D-009 | Encourages unsafe skips |
 | 7B+ local model on this 8 GB host | D-041 / D-050 | Not realistically runnable |
+| Git detector inside B1, or Git as the S01–S14 change signal | D-053 | Wrong layer; would disagree with D-028 / S03/S05/S10/S13; no E-003 gain |
+| Shipping `--from-git` in this submission | D-053 | Technically clean as an adapter; late-stage surface; deferred as a future enhancement |
 
 ## Chat / agent context logging
 
@@ -290,4 +301,4 @@ Major phases use **separate Cursor conversations**. This is a reproducibility ru
 
 ## Near-term stop rule
 
-After each micro-phase, work **stops** for human review. Phase 3.0 stops here. Do not start a paid-model phase or load S15 without explicit approval.
+After each micro-phase, work **stops** for human review. Phase 3.2 is the freeze: do not implement `--from-git`, do not start a paid-model phase, and do not load S15 without explicit approval.

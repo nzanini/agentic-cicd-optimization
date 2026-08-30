@@ -539,7 +539,7 @@ These are open on purpose. Phase 2.1 does not resolve them by implementing code.
 2. **Intermediate cache.** **Closed for B1 (D-027):** last-known-good warm + SHA-256 identity.
 3. **First deterministic algorithm.** **Closed (D-026):** impact graph, not path filters.
 4. **Dirty promote and the development pointer.** B0 leaves `development.json` stale after a dirty rebuild. Should an optimizer advance it?
-5. **Git ancestry.** Specified conceptually; B0 and the suite use explicit change lists. Walk commits later or not?
+5. **Git ancestry.** Specified conceptually; B0 and the suite use explicit change lists. **Working-tree Git detection** (clone → edit → run B1) was investigated in Phase 3.2 (D-053): it belongs in an optional adapter *before* B1, not inside B1, and must **not** replace D-028 (S03/S05/S10/S13 declared classes are not a workspace diff). **Not implemented** for this submission. Ancestry-for-promote (history since last validation) remains a separate open question.
 6. **Personas and other uncovered paths.** Add scenarios, or keep fail-closed mapping only?
 7. **`test` implementation.** Keep B0 smoke, or later run real pytest, without changing S02 ground truth?
 8. **How the harness invokes a non-B0 system.** **Closed for B1:** `--system baseline|optimized|compare`.

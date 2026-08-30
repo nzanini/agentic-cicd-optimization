@@ -648,18 +648,30 @@ Decisions, deferred questions, and rejected approaches. Evidence belongs in the 
 - **Alternatives considered:** Document a multi-branch Git workflow for judges (rejected). Add GitHub Actions as the official path (rejected: local is sufficient and already measured).
 - **Consequences / follow-up:** README and PROBLEM_FRAMING state the distinction. First commit + push is still required before a stranger can clone (not done in this phase).
 
+### [D-053] 2026-08-30 — Do not add a Git change detector to the submitted product
+
+- **Decision ID:** D-053
+- **Date:** 2026-08-30
+- **Status:** accepted
+- **Context:** Final freeze. B1 already consumes `changed_paths` from the caller: CLI `--changed`, or the harness union `files_changed ∪ apply` (D-028). Docs listed “no git ancestry walk; the caller must supply the change list” as a limitation. Cursor (Grok 4.6, Agent) was asked to investigate whether automatic Git working-tree discovery (clone → edit a file → run B1) was worth adding before submission.
+- **Decision:** Do **not** implement Git detection. Do **not** put Git inside `src/agentic_cicd/b1/`. B1’s job remains: optimize a **supplied** change set. The suite continues to use D-028. The documented limitation is **intentional scope**, not an overlooked defect. A future isolated `--from-git` adapter (working tree vs `HEAD`, outside B1) may exist later; it is not part of this submission. That adapter would not be git-ancestry-for-promote and must never replace the benchmark change signal.
+- **Rationale:** A detector does not move E-003 (375 → 220). Wiring Git into the harness would disagree with S03/S05/S10/S13, where the declared change class is not recoverable from a workspace diff. Making Git the CLI default would change omit-`--changed` = unknown (fail closed). D-051 already forbids new optimizer features for submission.
+- **Evidence:** not tested as a new suite run (docs-only investigation). CD-014; inspection of `cli.py`, `b1/planner.py`, `b1/classify.py`, `benchmark/apply.py` `change_set`, `benchmark/runner.py`, and S03/S10 overlay proxies.
+- **Alternatives considered:** Implement `--from-git` now (rejected: late-stage product surface, no measured gain). Make Git the default change signal (rejected: weakens the fail-closed CLI contract). Replace D-028 with `git diff` in the harness (rejected: would corrupt or fail-close the measured B1 result). Put Git inside `b1/` (rejected: mixes change acquisition with planning).
+- **Consequences / follow-up:** Record as a future enhancement only. Freeze the product. No implementation, no new experiment, no commit in this phase.
+
 ---
 
 ## Deferred (open decisions)
 
-Phase 1.3 closed topology/metrics/safety definitions. Phase 2.1–2.2 closed the optimizer contract and B1. Phase 2.3 closed the B2 *design* contract. Phase 2.4 implemented B2. Phase 2.5 closed Cursor-as-B2-host (D-038). Phase 2.6 implemented the $0 local live path (D-041–D-043). Phase 2.7 improved proposal validity (D-044–D-045). Phase 2.8 designed the agent-value benchmark (D-046–D-047). Phase 2.9 implemented S16–S18 (D-048–D-049). Phase 2.10 substituted one stronger local model (D-050). Phase 3.0 named B1 as the presented solution (D-051). Phase 3.1 fixed public Git topology vs simulated CI flows (D-052).
+Phase 1.3 closed topology/metrics/safety definitions. Phase 2.1–2.2 closed the optimizer contract and B1. Phase 2.3 closed the B2 *design* contract. Phase 2.4 implemented B2. Phase 2.5 closed Cursor-as-B2-host (D-038). Phase 2.6 implemented the $0 local live path (D-041–D-043). Phase 2.7 improved proposal validity (D-044–D-045). Phase 2.8 designed the agent-value benchmark (D-046–D-047). Phase 2.9 implemented S16–S18 (D-048–D-049). Phase 2.10 substituted one stronger local model (D-050). Phase 3.0 named B1 as the presented solution (D-051). Phase 3.1 fixed public Git topology vs simulated CI flows (D-052). Phase 3.2 investigated a working-tree Git adapter and froze without implementing it (D-053).
 
 | ID | Topic | State after Phase 1.3 |
 | --- | --- | --- |
 | D-OPEN-01 | User interviews / field evidence | Still open; working definition only |
 | D-OPEN-02 | Pipeline topology | **Closed as design (D-012)**; not implemented |
 | D-OPEN-03 | Ground-truth skip rules | **Closed as design** (`PROBLEM_FRAMING.md` §7); fixtures later |
-| D-OPEN-04 | Branch/promotion model | **Implemented in B0 (D-019)**; no git ancestry walk |
+| D-OPEN-04 | Branch/promotion model | **Implemented in B0 (D-019)**; no git ancestry walk. Working-tree `--from-git` is **not** this question; **deferred for submission (D-053)** |
 | D-OPEN-05 | Artifact identity / symmetry | **Closed (D-013 + D-018)** for local bundle hash; promote flow not implemented |
 | D-OPEN-06 | Baseline algorithm | **B0 implemented (D-019)**; **B1 implemented (D-026)** |
 | D-OPEN-07 | Agent architecture, tools, and model | **Implemented**; default `qwen2.5:3b`; E-011 tried `qwen3:4b-instruct` (no Q1 win); `copy_b1` wire form (D-044); local tools off (D-045) |
@@ -673,9 +685,10 @@ Phase 1.3 closed topology/metrics/safety definitions. Phase 2.1–2.2 closed the
 | D-OPEN-15 | Whether to implement B1 path filters | **Closed (D-026):** impact graph, not path filters |
 | D-OPEN-16 | Evaluate quality-gate thresholds | Still open (metrics are reported, not gating the build) |
 | D-OPEN-17 | Simulated cost realization | **Closed for B0:** counter only, no sleep |
-| D-OPEN-18 | Optimizer change-input signal (`files_changed` vs `apply` diffs) | **Closed for B1 (D-028):** union |
+| D-OPEN-18 | Optimizer change-input signal (`files_changed` vs `apply` diffs) | **Closed for B1 (D-028):** union. Git must not replace this in the harness (D-053) |
 | D-OPEN-19 | Intermediate artifact cache for legal skips | **Closed for B1 (D-027):** identity-checked last-known-good cache |
 | D-OPEN-20 | Whether dirty promote should advance the development pointer | Open; B0 does not rewrite `development.json` |
+| D-OPEN-21 | Optional working-tree Git adapter (`--from-git`) | **Closed for submission (D-053):** analyzed; not implemented; future enhancement only. Not an optimizer rule and not a defect |
 
 ---
 
@@ -684,3 +697,5 @@ Phase 1.3 closed topology/metrics/safety definitions. Phase 2.1–2.2 closed the
 No implementation approach has been built and discarded.
 
 Design alternatives **rejected on paper** in Phase 1.3 (not empirical): live API as benchmark source; training-centric ML; skip-count or ungated wall-clock as the primary metric; feature→main; rebuild-on-promote as the optimized path. Details: `PROBLEM_FRAMING.md` §12 and D-009–D-015.
+
+Phase 3.2 (D-053, not empirical): shipping an optional `--from-git` working-tree adapter, putting Git inside `b1/`, or replacing the D-028 harness union with a Git/workspace diff. Analyzed with Cursor; not built. A later isolated adapter remains a possible enhancement, not this submission.
